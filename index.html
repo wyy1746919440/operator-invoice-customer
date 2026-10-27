@@ -224,23 +224,11 @@
 
         <div class="up-form">
           <div class="uitem">
-            <div class="ul"><span class="req">*</span>发票号码</div>
-            <input class="ipt" id="invNo" placeholder="请输入发票号码（8-20位）">
-          </div>
-          <div class="uitem">
-            <div class="ul"><span class="req">*</span>开票日期</div>
-            <input class="ipt" id="invDate" type="date">
-          </div>
-          <div class="uitem">
-            <div class="ul"><span class="req">*</span>发票类型</div>
-            <select class="ipt" id="invType">
-              <option value="">请选择</option>
-              <option>普票</option>
-              <option>专票</option>
-            </select>
+            <div class="ul"><span class="req">*</span>开票金额</div>
+            <input class="ipt" id="invAmt" type="number" min="0" step="0.01" placeholder="请输入开票金额">
           </div>
         </div>
-        <div class="err-hint" id="upHint">请上传发票文件并填写完整发票号码、开票日期、发票类型</div>
+        <div class="err-hint" id="upHint">请上传发票文件并填写开票金额</div>
         <div class="up-tip">提交后进入平台审核，审核结果将在开票管理中通知；被驳回可重新上传。</div>
       </div>
     </div>
@@ -305,20 +293,19 @@
   }
 
   function submitInvoice(){
-    var no = document.getElementById('invNo').value.trim();
-    var date = document.getElementById('invDate').value;
-    var type = document.getElementById('invType').value;
+    var amt = document.getElementById('invAmt').value.trim();
     var hint = document.getElementById('upHint');
-    if(!hasFile || !no || !date || !type){
+    if(!hasFile || amt === '' || isNaN(amt) || +amt < 0){
       hint.style.display = 'block';
       return;
     }
     hint.style.display = 'none';
-    // 演示：提交后横幅切到「待平台审核」
+    // 演示：提交后横幅切到「待平台审核」，金额回显
     var b = document.getElementById('banner');
     b.className = 'banner b-review';
     b.innerHTML = '<span class="b-ico">●</span><span class="b-main">开票状态：<b>待平台审核</b><span class="b-reason">｜已收到您上传的发票，平台审核中，结果将在开票管理中通知</span></span>';
-    document.getElementById('fInvType').textContent = type;
+    var money = document.querySelector('.ditem .dv.money');
+    money.textContent = '¥' + (+amt).toFixed(2);
     document.querySelector('.up-body').style.display = 'none';
     window.scrollTo({top:0,behavior:'smooth'});
     alert('发票已提交，等待平台审核');
