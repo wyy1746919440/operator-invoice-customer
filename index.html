@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发票详情（客户开票） · 运营商平台（PC端）</title>
+<style>
+  :root{
+    --primary:#2b7cff;
+    --primary-hover:#1f6ef2;
+    --primary-light:#eaf2ff;
+    --text:#1f2329;
+    --text-2:#4e5969;
+    --text-3:#86909c;
+    --border:#e5e6eb;
+    --border-2:#f2f3f5;
+    --bg:#f5f6f8;
+    --danger:#f53f3f;
+    --success:#00b578;
+    --radius:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;
+  }
+
+  .topnav{
+    height:56px;background:#fff;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30;
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;margin-right:40px;}
+  .logo .mark{width:30px;height:30px;border-radius:50%;background:#f0b100;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .nav-item{padding:0 18px;line-height:56px;color:var(--text-2);cursor:pointer;font-size:14px;position:relative;}
+  .nav-item:hover{color:var(--primary);}
+  .nav-item.active{color:var(--primary);font-weight:600;}
+  .nav-item.active::after{content:"";position:absolute;left:18px;right:18px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--primary);}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;color:var(--text-2);font-size:13px;}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;}
+
+  .layout{display:flex;align-items:flex-start;min-height:calc(100vh - 56px);}
+  .sidebar{
+    width:190px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);
+    position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;padding:8px 0;
+  }
+  .side-item{padding:8px 12px 8px 20px;border-radius:4px;color:var(--text-3);cursor:pointer;font-size:13px;margin-bottom:1px;}
+  .side-item:hover{background:var(--border-2);}
+  .side-item.main{
+    display:flex;align-items:center;gap:6px;color:var(--text);font-weight:600;
+    font-size:14px;padding:12px 12px 8px 16px;cursor:default;
+  }
+  .side-item.main .ic{color:var(--primary);font-style:normal;}
+  .side-item.sub{padding-left:34px;}
+  .side-item.sub:hover{color:var(--text-2);}
+  .side-item.sub.active{background:#fdecec;color:var(--primary);font-weight:500;}
+
+  .content{flex:1;min-width:0;padding:16px 24px 24px;display:flex;flex-direction:column;}
+  .breadcrumb{font-size:13px;color:var(--text-3);margin-bottom:14px;}
+  .breadcrumb b{color:var(--text);font-weight:500;}
+
+  /* ===== 状态横幅 ===== */
+  .banner{
+    display:flex;align-items:flex-start;gap:10px;border-radius:6px;
+    padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.7;
+  }
+  .banner .b-ico{font-weight:700;}
+  .banner .b-reason{opacity:.85;}
+  .banner .b-close{margin-left:auto;cursor:pointer;opacity:.5;font-size:15px;line-height:1.7;}
+  .banner .b-close:hover{opacity:1;}
+  .b-wait{background:#fff7e8;color:#8c6d1f;}
+  .b-wait .b-ico,.b-wait .b-main b{color:#ff9a2e;}
+  .b-review{background:var(--primary-light);color:#1d4d99;}
+  .b-review .b-ico,.b-review .b-main b{color:var(--primary);}
+  .b-rej{background:#ffece8;color:#a83a34;}
+  .b-rej .b-ico,.b-rej .b-main b{color:var(--danger);}
+  .b-ok{background:#e8f7ef;color:#0a7d51;}
+  .b-ok .b-ico,.b-ok .b-main b{color:var(--success);}
+
+  .card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .card + .card{margin-top:16px;}
+  .sec-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .sec-title::before{content:"";width:3px;height:15px;background:var(--primary);border-radius:2px;}
+
+  /* ===== 开票信息：多列字段网格 ===== */
+  .detail-head{padding:20px 24px 8px;display:flex;align-items:center;justify-content:space-between;}
+  .dgrid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:18px 32px;
+    padding:18px 24px 24px;
+  }
+  .ditem .dl{font-size:12px;color:var(--text-3);margin-bottom:3px;}
+  .ditem .dv{font-size:13px;color:var(--text);word-break:break-all;}
+  .ditem .dv.money{color:var(--danger);font-weight:600;font-size:15px;}
+  .fold{font-size:12px;color:var(--primary);cursor:pointer;user-select:none;}
+
+  /* ===== 上传发票 ===== */
+  .up-body{padding:20px 24px 24px;}
+  .up-body .sec-title{margin-bottom:16px;}
+  .up-zone{
+    border:1px dashed #c9cdd4;border-radius:6px;background:#fafbfc;
+    padding:28px 0;text-align:center;color:var(--text-3);font-size:13px;cursor:pointer;
+    transition:all .15s;margin-bottom:14px;
+  }
+  .up-zone:hover{border-color:var(--primary);color:var(--primary);}
+  .up-zone .big{font-size:22px;display:block;margin-bottom:6px;}
+  .file-chip{
+    display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);
+    color:var(--primary);border-radius:4px;padding:6px 12px;font-size:13px;margin-bottom:14px;
+  }
+  .file-chip .x{cursor:pointer;font-weight:700;}
+  .up-form{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 24px;max-width:860px;}
+  .uitem .ul{font-size:13px;color:var(--text-2);margin-bottom:6px;}
+  .uitem .ul .req{color:var(--danger);margin-right:2px;}
+  .ipt,select.ipt{
+    width:100%;height:32px;border:1px solid var(--border);border-radius:4px;padding:0 10px;
+    font-size:13px;color:var(--text);outline:none;font-family:inherit;background:#fff;
+  }
+  .ipt:focus{border-color:var(--primary);}
+  .up-tip{font-size:12px;color:var(--text-3);margin-top:6px;}
+
+  /* ===== 明细表格 ===== */
+  .table-wrap{border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;overflow:hidden;}
+  table.gt{width:100%;border-collapse:collapse;font-size:13px;}
+  table.gt th{
+    background:#f7f8fa;color:var(--text-2);font-weight:500;text-align:left;
+    padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  table.gt td{padding:10px 14px;border-bottom:1px solid var(--border-2);color:var(--text-2);}
+  table.gt tbody tr:hover{background:#fafbfc;}
+  table.gt tr:last-child td{border-bottom:none;}
+  table.gt td.num,table.gt th.num{text-align:right;width:140px;}
+  .neg{color:var(--danger);}
+  tr.total-row td{
+    background:#fcfcfd;font-weight:600;color:var(--text);border-top:1px solid var(--border);
+  }
+  .detail-body{padding:20px 24px 24px;}
+  .detail-body .head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .detail-body .sum{font-size:13px;color:var(--text-2);}
+  .detail-body .sum b{color:var(--text);}
+  .detail-body .sum .money{color:var(--danger);font-weight:600;}
+
+  .page-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:20px;}
+  .btn{
+    height:34px;padding:0 28px;border-radius:4px;border:1px solid var(--border);
+    background:#fff;color:var(--text-2);cursor:pointer;font-size:14px;font-family:inherit;transition:all .15s;
+  }
+  .btn:hover{border-color:var(--primary);color:var(--primary);}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-hover);color:#fff;}
+  .btn-primary:disabled{background:#a8c7fa;border-color:#a8c7fa;cursor:not-allowed;color:#fff;}
+  .err-hint{font-size:12px;color:var(--danger);margin-top:8px;display:none;}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="logo"><span class="mark">鹅</span>大黄鹅</div>
+  <div class="nav-item">售货机运营</div>
+  <div class="nav-item active">结算中心</div>
+  <div class="nav-item">大黄鹅服务商</div>
+  <div class="nav-item">进货销平台</div>
+  <div class="nav-right">
+    <span>DEX</span><span>📋</span><span>🔔</span><span>🌐 中文 ▾</span>
+    <span class="avatar">王</span><span>王泳瑜 ▾</span>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-item main"><span class="ic">Ⓢ</span>结算中心</div>
+    <div class="side-item sub">账户总览</div>
+    <div class="side-item sub">账户明细</div>
+    <div class="side-item sub">提现记录</div>
+    <div class="side-item sub">服务流水账单</div>
+    <div class="side-item sub">服务凭单</div>
+    <div class="side-item sub">售后记录</div>
+    <div class="side-item sub">福利记录</div>
+    <div class="side-item sub">增值打款</div>
+    <div class="side-item sub">服务费政策</div>
+    <div class="side-item sub active">开票管理</div>
+  </aside>
+
+  <main class="content">
+    <div class="breadcrumb">当前位置：结算中心 / 开票管理 / <b>发票详情（客户开票）</b></div>
+
+    <!-- 状态横幅：待开票 -->
+    <div class="banner b-wait" id="banner">
+      <span class="b-ico">●</span>
+      <span class="b-main">
+        开票状态：<b>待开票</b>
+        <span class="b-reason">｜需您给大黄鹅开票，为避免影响提现，请于 <b id="leftDays">7</b> 天内上传发票</span>
+      </span>
+      <span class="b-close" onclick="document.getElementById('banner').style.display='none'">✕</span>
+    </div>
+
+    <!-- ① 开票信息（平台抬头，自动带出，只读） -->
+    <div class="card">
+      <div class="detail-head">
+        <div class="sec-title">开票信息</div>
+        <span class="fold" onclick="toggleMore(this)">收起更多信息 ∧</span>
+      </div>
+      <div class="dgrid" id="dgrid">
+        <div class="ditem"><div class="dl">开票金额</div><div class="dv money">¥0.00</div></div>
+        <div class="ditem"><div class="dl">发票抬头（平台）</div><div class="dv">深圳市大黄鹅商务服务有限公司</div></div>
+        <div class="ditem"><div class="dl">发票类型</div><div class="dv" id="fInvType">--</div></div>
+        <div class="ditem"><div class="dl">税号</div><div class="dv">91440300MA5G29YB26</div></div>
+        <div class="ditem" style="grid-column:span 2;"><div class="dl">单位地址</div><div class="dv">深圳市南山区西丽街道西丽社区打石一路深圳国际创新谷八栋A座603</div></div>
+        <div class="ditem"><div class="dl">单位电话</div><div class="dv">400-180-0682</div></div>
+        <div class="ditem"><div class="dl">开户银行</div><div class="dv">招商银行股份有限公司深圳西丽支行</div></div>
+        <div class="ditem"><div class="dl">银行账户</div><div class="dv">755950404910102</div></div>
+        <div class="ditem"><div class="dl">备注</div><div class="dv">--</div></div>
+      </div>
+    </div>
+
+    <!-- ② 上传发票（待开票时展示） -->
+    <div class="card">
+      <div class="up-body">
+        <div class="sec-title">上传发票</div>
+        <div class="up-zone" id="upZone" onclick="document.getElementById('fileInput').click()">
+          <span class="big">⇪</span>
+          点击上传发票文件，支持 jpg / png / pdf，单个文件不超过 10M
+        </div>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" onchange="onFile(this)">
+        <div id="fileWrap"></div>
+
+        <div class="up-form">
+          <div class="uitem">
+            <div class="ul"><span class="req">*</span>发票号码</div>
+            <input class="ipt" id="invNo" placeholder="请输入发票号码（8-20位）">
+          </div>
+          <div class="uitem">
+            <div class="ul"><span class="req">*</span>开票日期</div>
+            <input class="ipt" id="invDate" type="date">
+          </div>
+          <div class="uitem">
+            <div class="ul"><span class="req">*</span>发票类型</div>
+            <select class="ipt" id="invType">
+              <option value="">请选择</option>
+              <option>普票</option>
+              <option>专票</option>
+            </select>
+          </div>
+        </div>
+        <div class="err-hint" id="upHint">请上传发票文件并填写完整发票号码、开票日期、发票类型</div>
+        <div class="up-tip">提交后进入平台审核，审核结果将在开票管理中通知；被驳回可重新上传。</div>
+      </div>
+    </div>
+
+    <!-- ③ 开票明细 -->
+    <div class="card">
+      <div class="detail-body">
+        <div class="head-row">
+          <div class="sec-title">开票明细</div>
+          <span class="sum">共 <b>1</b> 笔，总金额 <span class="money">¥0.00</span></span>
+        </div>
+        <div class="table-wrap">
+          <table class="gt">
+            <thead>
+              <tr>
+                <th>费用明细项</th>
+                <th class="num">金额（元）</th>
+                <th class="num">税率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>机器收入 - 微信 - 手续费</td><td class="num">¥0.00</td><td class="num">13%</td></tr>
+              <tr class="total-row">
+                <td>总计</td><td class="num">¥0.00</td><td class="num">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-actions">
+      <button class="btn" onclick="alert('返回开票管理列表')">返回</button>
+      <button class="btn btn-primary" onclick="submitInvoice()">提交发票</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  var hasFile = false;
+
+  function toggleMore(el){
+    var g = document.getElementById('dgrid');
+    var open = g.style.display !== 'none';
+    g.style.display = open ? 'none' : '';
+    el.textContent = open ? '展开更多信息 ∨' : '收起更多信息 ∧';
+  }
+
+  function onFile(input){
+    var f = input.files[0];
+    if(!f) return;
+    hasFile = true;
+    document.getElementById('upZone').style.display = 'none';
+    document.getElementById('fileWrap').innerHTML =
+      '<span class="file-chip">📄 ' + f.name + '（' + (f.size/1024).toFixed(0) + ' KB）<span class="x" onclick="removeFile()">✕</span></span>';
+  }
+  function removeFile(){
+    hasFile = false;
+    document.getElementById('fileWrap').innerHTML = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('upZone').style.display = '';
+  }
+
+  function submitInvoice(){
+    var no = document.getElementById('invNo').value.trim();
+    var date = document.getElementById('invDate').value;
+    var type = document.getElementById('invType').value;
+    var hint = document.getElementById('upHint');
+    if(!hasFile || !no || !date || !type){
+      hint.style.display = 'block';
+      return;
+    }
+    hint.style.display = 'none';
+    // 演示：提交后横幅切到「待平台审核」
+    var b = document.getElementById('banner');
+    b.className = 'banner b-review';
+    b.innerHTML = '<span class="b-ico">●</span><span class="b-main">开票状态：<b>待平台审核</b><span class="b-reason">｜已收到您上传的发票，平台审核中，结果将在开票管理中通知</span></span>';
+    document.getElementById('fInvType').textContent = type;
+    document.querySelector('.up-body').style.display = 'none';
+    window.scrollTo({top:0,behavior:'smooth'});
+    alert('发票已提交，等待平台审核');
+  }
+</script>
+</body>
+</html>
